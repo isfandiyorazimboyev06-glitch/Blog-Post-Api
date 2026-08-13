@@ -46,7 +46,7 @@ class BlogPostPolicy
      */
     public function delete(User $user, BlogPost $blogPost): bool
     {
-        return $user->role === 'admin' || $user->id === $blogPost->user_id;
+        return $user->id === $blogPost->user_id;
     }
 
     /**

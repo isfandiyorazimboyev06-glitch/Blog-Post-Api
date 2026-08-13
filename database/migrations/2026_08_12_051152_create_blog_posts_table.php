@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('author');
             $table->string('post');
             $table->foreignId('category_blog_post_id')->nullable()->constrained()->onDelete('set null');
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('set null');
 
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

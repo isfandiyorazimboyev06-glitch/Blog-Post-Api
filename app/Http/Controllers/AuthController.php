@@ -36,6 +36,12 @@ class AuthController extends Controller
     {
         $result = $this->authService->login($request->validated());
 
+        if ($result === null) {
+            return response()->json([
+                'message' => 'The credentials are not found from db.'
+            ],404);
+        }
+
         return response()->json([
             'user'=> new UserResource($result['user']),
             'token'=> $result['token']

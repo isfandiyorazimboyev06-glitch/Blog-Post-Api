@@ -3,24 +3,36 @@
 namespace App\Services;
 
 use App\Models\BlogPost;
+use App\Repositories\BlogPostRepository;
 use Illuminate\Database\Eloquent\Collection;
+
 
 class BlogPostService
 {
+    // Inject the Repository layer right here
+    public function __construct(
+        protected BlogPostRepository $blogPostRepo
+    ){}
+
     /**
      *  Get all blog posts with their category.
     */
     public function getAllPosts(): Collection
     {
-        return BlogPost::with('category')->get();
+        return $this->blogPostRepo->all();
     }
     /**
      * Create a new blog post and load its category.
      */
     public function createPost(array $data): BlogPost
     {
-        $blogpost = BlogPost::create($data);
+        // pulls id from user
+        $data['user_id'] = (int) request()->user()->id;
 
+        // let the repository talk to the db
+        $blogpost = $this->blogPostRepo->create($data);
+
+        // business logic/formatting handled by the service layer
         return $blogpost->loadMissing('category');
     }
 
@@ -29,16 +41,18 @@ class BlogPostService
      */
     public function updatePost(BlogPost $blogpost, array $data): BlogPost
     {
-        $blogpost->update($data);
+        // Let the repository handle the database update
+        $updatedPost = $this->blogPostRepo->update($blogpost,$data);
 
-        return $blogpost->loadMissing('category');
+        // Service layer prepares the final object state
+        return $updatedPost->loadMissing('category');
     }
     /**
      * Delete a blog post.
      */
     public function deletePost(BlogPost $blogpost): bool
     {
-        return $blogpost->delete();
+        return $this->blogPostRepo->delete($blogpost);
     }
 }
 

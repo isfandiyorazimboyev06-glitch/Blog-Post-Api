@@ -14,7 +14,13 @@ Route::get('/user', function (Request $request) {
 
 // --- PUBLIC ROUTES ---
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login',[AuthController::class, 'login']);
+Route::post('/login',[AuthController::class, 'login'])
+        ->missing( function () {
+            return response()->json([
+                'status' => false,
+                'message' => "The requested blog was not found in our db."
+            ],404);
+});
 
 
 

@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-
+use App\Http\Requests\DeleteBlogPostRequest;
 use App\Http\Requests\StoreBlogPostRequest;
 use App\Http\Requests\UpdateBlogPostRequest;
 
@@ -18,7 +18,6 @@ use App\Services\BlogPostService;
 
 use Illuminate\Http\JsonResponse;
 
-use Illuminate\Support\Facades\Gate;
 
 class BlogPostController extends Controller implements HasMiddleware
 {
@@ -74,8 +73,6 @@ class BlogPostController extends Controller implements HasMiddleware
      */
     public function update(UpdateBlogPostRequest $request, BlogPost $blogpost) : BlogPostResource
     {
-        // Laravel looks at the $blogPost object, finds BlogPostPolicy and calls 'update'
-        Gate::authorize('update',$blogpost);
 
         $updatedpost= $this->blogPostService->updatePost($blogpost,$request->validated());
 
@@ -85,12 +82,15 @@ class BlogPostController extends Controller implements HasMiddleware
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(BlogPost $blogpost) : JsonResponse
+    public function destroy(DeleteBlogPostRequest $request) : JsonResponse
     {
-        //
-        Gate::authorize('delete',$blogpost);
+        // Fetch the pre-authorized model directly from the route
+        $blogpost = $request->route('blogpost');
+
+        // Execute the service layer operation
         $this->blogPostService->deletePost($blogpost);
 
+        // Return a clean, standardized JSON response back to Postman
         return response()->json(["message" => "Blog Post {$blogpost->id} successfully deleted."],200);
 
     }

@@ -7,20 +7,17 @@ use Illuminate\Foundation\Http\FormRequest;
 
 use Illuminate\Support\Facades\Gate;
 
-class UpdateBlogPostRequest extends FormRequest
+class DeleteBlogPostRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        // Fetch the BlogPost model instance bound to the route parameter
-        // (Ensure 'blogpost' matches the exact variable name in your routes file)
         $blogpost = $this->route('blogpost');
 
-
-        // run the policy check and return its true/false boolean result
-        return Gate::allows('update',$blogpost);
+        // Run the policy check for 'delete' and return true or false
+        return Gate::allows('delete',$blogpost);
     }
 
     /**
@@ -32,9 +29,6 @@ class UpdateBlogPostRequest extends FormRequest
     {
         return [
             //
-            'author' => 'sometimes|string|max:255',
-            'post' => 'sometimes|string|max:255',
-            'category_blog_post_id' => 'sometimes|exists:category_blog_posts,id'
         ];
     }
 }
