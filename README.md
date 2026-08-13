@@ -1,10 +1,11 @@
 # Blog Post API
 
-A robust, modern RESTful API built with Laravel 11 and PostgreSQL running inside Docker. This project manages blog posts and categories using professional backend standards, robust data validation, and clean JSON transformations.
+A robust, modern RESTful API built with Laravel 11 and PostgreSQL running inside Docker. This project manages blog posts and categories using decoupled professional backend standards, robust data validation, clean JSON transformations, and strict architectural separation.
 
 ## 🚀 Tech Stack & Infrastructure
 
 - **Framework:** Laravel 11 (Minimalist App Architecture)
+- **Authentication:** Laravel Sanctum (Secure Token-Based API Access)
 - **Database:** PostgreSQL (Official Docker Image)
 - **Containerization:** Docker Desktop with a managed Named Volume (`pg_blog_data`)
 - **Local Environment:** Native PHP (`php artisan serve`) connecting directly to the Docker DB port
@@ -14,6 +15,8 @@ A robust, modern RESTful API built with Laravel 11 and PostgreSQL running inside
 
 ## 🛠 Features Implemented
 
+- **Decoupled Architecture:** Strict separation of core concerns using specialized Form Requests, Service layers, and Data Transformers.
+- **Secure Token Authentication:** Integrated Laravel Sanctum for API token issuance, validation guards, and automatic endpoint protection.
 - **Advanced Eloquent Relationships:** Optimized Many-to-One mapping linking `BlogPost` to `CategoryBlogPost` using a custom naming convention.
 - **N+1 Query Prevention:** Efficient usage of Eloquent Eager Loading (`with()`) and Lazy Eager Loading (`load()`).
 - **Data Encapsulation:** Custom API Resources (`BlogPostResource` and `CategoryBlogPostResource`) utilizing `$this->whenLoaded()` to conditionally nest secure JSON relationships.
@@ -22,79 +25,32 @@ A robust, modern RESTful API built with Laravel 11 and PostgreSQL running inside
 
 ---
 
-## ⚙️ Installation & Local Setup
+## 🏗 Architectural Design & Logic Split
 
-### 1. Clone the Project
-```bash
-git clone https://github.com
-cd Blog-Post-Api
-```
+To keep the application highly scalable, clean, and testable, the codebase explicitly splits logic into specialized layers rather than overcrowding the Controller layer.
 
-### 2. Install PHP Dependencies
-```bash
-composer install
-```
+### 📋 1. Form Requests (`App\Http\Requests`)
+Handles **incoming HTTP validation** and request authorization. 
+* It intercepts the data payload *before* it reaches the execution block.
+* Ensures strict data types are enforced so invalid formats never hit the database.
 
-### 3. Spin Up the PostgreSQL Database via Docker
-Run the exact Docker command to spin up the database container with a persistent named volume:
-```bash
-docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -v pg_blog_data:/var/lib/postgresql/data -p 5432:5432 -d postgres
-```
+### 🎮 2. Controllers (`App\Http\Controllers`)
+Serves exclusively as the **HTTP Entry/Exit Gateway**.
+* Rejects data early if validation fails.
+* Inject relevant classes, triggers the correct Service, and routes the response back out.
+* **Contains zero business logic or direct database queries.**
 
-### 4. Setup Environment Configuration
-Copy the `.env.example` file to `.env`:
-```bash
-cp .env.example .env
-```
-Open `.env` and set up the connection pointing to your live Docker container For example:
-```env
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=postgres
-DB_USERNAME=postgres
-DB_PASSWORD=mysecretpassword
-```
+### ⚙️ 3. Service Layer (`App\Services`)
+Houses all **core business logic** and data processing rules.
+* Coordinates Eloquent queries, models mutations, file handlings, or external system links.
+* Creates or revokes Sanctum authentication tokens.
+* Isolates operations into separate PHP classes so they can easily be reused elsewhere.
 
-### 5. Run Database Migrations
-Wipe the schema clean and build the optimized table tables structure from scratch:
-```bash
-php artisan migrate:fresh
-```
-
-### 6. Boot the Local Server
-```bash
-php artisan serve
-```
-The application will be accessible locally at `http://127.0.0`.
-
----
-
-## 🛣 API Endpoints (Routes Mapping)
-
-You can check all active system endpoints using `php artisan route:list`. The main endpoints for `api/blog-posts` are:
-
-| HTTP Method | URI | Controller Action | Purpose |
-| :--- | :--- | :--- | :--- |
-| **GET** | `/api/blog-posts` | `index` | Display list of posts + nested category metadata |
-| **POST** | `/api/blog-posts` | `store` | Validate payload data type and save a new post |
-| **GET** | `/api/blog-posts/{id}`| `show` | Fetch a single post (Supports optional `include_coach` / elements) |
-| **PUT/PATCH**| `/api/blog-posts/{id}`| `update` | Update fields safely and reload structural arrays |
-| **DELETE** | `/api/blog-posts/{id}`| `destroy` | Safely wipe post record and return dynamic validation strings |
-
----
-
-### 1. Form Requests (`App\Http\Requests`)
-Responsible entirely for **incoming payload data validation**, sanitization, and authorization rules. It isolates validation routines from the controller execution block.
-
-### 2. Controllers (`App\Http\Controllers`)
-Controllers serve exclusively as **traffic orchestrators**. They inject dependencies, invoke specific services, and return responses. They contain zero business logic or manual database handling queries.
-
-### 3. Service Layer (`App\Services`)
-All **core business logic**, calculations, model mutations, database transactions, and Sanctum token provisioning calculations reside within standalone Service classes. 
-
-### 4. API Resources (`App\Http\Resources`)
-Responsible entirely for the **outgoing JSON structure**. They filter internal database structures, remove sensitive fields, and gracefully process conditional model relations before outputting to the client.
+### 📦 4. API Resources (`App\Http\Resources`)
+Handles **outgoing JSON data presentation**.
+* Filters out sensitive database columns (like passwords or system timestamps).
+* Normalizes response object arrays into a clean, expected contract format.
+* Dynamically manages relationship structures on demand without triggering hidden system overheads.
 
 ---
 
@@ -148,16 +104,16 @@ The application will be accessible locally at `http://127.0.0.1:8000`.
 
 ## 🛣 API Endpoints (Routes Mapping)
 
-You can check all active system endpoints using `php artisan route:list`. The main endpoints for `api/blog-posts` are:
+You can check all active system endpoints using `php artisan route:list`. The core endpoints map out as follows:
 
-| HTTP Method | URI | Controller Action | Authentication | Purpose |
+| HTTP Method | URI | Controller Action | Route Access | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| **POST** | `/api/login` | `login` | Public | Authenticates credentials and returns a Sanctum Token |
-| **GET** | `/api/blog-posts` | `index` | Sanctum Bearer | Display list of posts + nested category metadata |
-| **POST** | `/api/blog-posts` | `store` | Sanctum Bearer | Validate payload data type and save a new post |
-| **GET** | `/api/blog-posts/{id}`| `show` | Sanctum Bearer | Fetch a single post |
-| **PUT/PATCH**| `/api/blog-posts/{id}`| `update` | Sanctum Bearer | Update fields safely via Service layer |
-| **DELETE** | `/api/blog-posts/{id}`| `destroy` | Sanctum Bearer | Safely wipe post record |
+| **POST** | `/api/login` | `login` | **Public** | Validates user data and issues a secure Sanctum Token |
+| **GET** | `/api/blog-posts` | `index` | **Protected (Sanctum)** | Display list of posts + nested category metadata |
+| **POST** | `/api/blog-posts` | `store` | **Protected (Sanctum)** | Validate payload data type and save a new post |
+| **GET** | `/api/blog-posts/{id}`| `show` | **Protected (Sanctum)** | Fetch a single post |
+| **PUT/PATCH**| `/api/blog-posts/{id}`| `update` | **Protected (Sanctum)** | Update fields safely via designated Service layer |
+| **DELETE** | `/api/blog-posts/{id}`| `destroy` | **Protected (Sanctum)** | Safely wipe post record out of database tables |
 
 ---
 
