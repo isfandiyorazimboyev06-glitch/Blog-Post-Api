@@ -84,6 +84,83 @@ You can check all active system endpoints using `php artisan route:list`. The ma
 
 ---
 
+### 1. Form Requests (`App\Http\Requests`)
+Responsible entirely for **incoming payload data validation**, sanitization, and authorization rules. It isolates validation routines from the controller execution block.
+
+### 2. Controllers (`App\Http\Controllers`)
+Controllers serve exclusively as **traffic orchestrators**. They inject dependencies, invoke specific services, and return responses. They contain zero business logic or manual database handling queries.
+
+### 3. Service Layer (`App\Services`)
+All **core business logic**, calculations, model mutations, database transactions, and Sanctum token provisioning calculations reside within standalone Service classes. 
+
+### 4. API Resources (`App\Http\Resources`)
+Responsible entirely for the **outgoing JSON structure**. They filter internal database structures, remove sensitive fields, and gracefully process conditional model relations before outputting to the client.
+
+---
+
+## ⚙️ Installation & Local Setup
+
+### 1. Clone the Project
+```bash
+git clone https://github.com
+cd Blog-Post-Api
+```
+
+### 2. Install PHP Dependencies
+```bash
+composer install
+```
+
+### 3. Spin Up the PostgreSQL Database via Docker
+Run the exact Docker command to spin up the database container with a persistent named volume:
+```bash
+docker run --name my-postgres -e POSTGRES_PASSWORD=mysecretpassword -v pg_blog_data:/var/lib/postgresql/data -p 5432:5432 -d postgres
+```
+
+### 4. Setup Environment Configuration
+Copy the `.env.example` file to `.env`:
+```bash
+cp .env.example .env
+```
+Open `.env` and set up the connection pointing to your live Docker container. For example:
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=postgres
+DB_USERNAME=postgres
+DB_PASSWORD=mysecretpassword
+```
+
+### 5. Run Database Migrations
+Wipe the schema clean and build the optimized table tables structure from scratch:
+```bash
+php artisan migrate:fresh
+```
+
+### 6. Boot the Local Server
+```bash
+php artisan serve
+```
+The application will be accessible locally at `http://127.0.0.1:8000`.
+
+---
+
+## 🛣 API Endpoints (Routes Mapping)
+
+You can check all active system endpoints using `php artisan route:list`. The main endpoints for `api/blog-posts` are:
+
+| HTTP Method | URI | Controller Action | Authentication | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **POST** | `/api/login` | `login` | Public | Authenticates credentials and returns a Sanctum Token |
+| **GET** | `/api/blog-posts` | `index` | Sanctum Bearer | Display list of posts + nested category metadata |
+| **POST** | `/api/blog-posts` | `store` | Sanctum Bearer | Validate payload data type and save a new post |
+| **GET** | `/api/blog-posts/{id}`| `show` | Sanctum Bearer | Fetch a single post |
+| **PUT/PATCH**| `/api/blog-posts/{id}`| `update` | Sanctum Bearer | Update fields safely via Service layer |
+| **DELETE** | `/api/blog-posts/{id}`| `destroy` | Sanctum Bearer | Safely wipe post record |
+
+---
+
 ## 🔒 Security & Request Validation Example
 If a client sends an invalid payload data type (e.g., entering an integer for the `author` text string or a fake category pointer), the `StoreBlogPostRequest` halts execution immediately and passes back clean JSON validation feedback:
 
