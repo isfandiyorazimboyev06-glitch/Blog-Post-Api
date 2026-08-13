@@ -2,22 +2,45 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 
 use App\Http\Requests\StoreBlogPostRequest;
 use App\Http\Requests\UpdateBlogPostRequest;
 
 use App\Models\BlogPost;
-use App\Http\Resources\BlogPostResource;
 
-class BlogPostController extends Controller
+use App\Http\Resources\BlogPostResource;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+
+use App\Services\BlogPostService;
+
+use Illuminate\Http\JsonResponse;
+
+class BlogPostController extends Controller implements HasMiddleware
 {
+    // Inject the BlogPostService through the constructor
+    public function __construct(
+        protected BlogPostService $blogPostService
+    ){}
+
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            // Apply auth::sanctum to everything EXCEPT index and show actions
+            new Middleware('auth:sanctum',except:['index','show']),
+        ];
+    }
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index() : AnonymousResourceCollection
     {
-        $blogpost = BlogPost::with('category')->get();
+        $blogpost = $this->blogPostService->getAllPosts();
 
         return BlogPostResource::collection($blogpost);
 
@@ -26,12 +49,10 @@ class BlogPostController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreBlogPostRequest $request)
+    public function store(StoreBlogPostRequest $request): BlogPostResource
     {
         //
-        $blogpost = BlogPost::create($request->validated());
-
-        $blogpost->load('category');
+        $blogpost = $this->blogPostService->createPost($request->validated());
 
         return new BlogPostResource($blogpost);
 
@@ -40,36 +61,32 @@ class BlogPostController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(BlogPost $blogpost)
+    public function show(BlogPost $blogpost) : BlogPostResource
     {
-        //
-        $blogpost->load('category');
 
-        return new BlogPostResource($blogpost);
+        return new BlogPostResource($blogpost->loadMissing('category'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateBlogPostRequest $request, BlogPost $blogpost)
+    public function update(UpdateBlogPostRequest $request, BlogPost $blogpost) : BlogPostResource
     {
         //
-        $blogpost->update($request->validated());
+        $updatedpost= $this->blogPostService->updatePost($blogpost,$request->validated());
 
-        $blogpost->load('category');
-
-        return new BlogPostResource($blogpost);
+        return new BlogPostResource($updatedpost);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(BlogPost $blogpost)
+    public function destroy(BlogPost $blogpost) : JsonResponse
     {
         //
-        $blogpost->delete();
+        $this->blogPostService->deletePost($blogpost);
 
-    return response()->json(["message" => "Blog Post {$blogpost->id} successfully deleted."],200);
+        return response()->json(["message" => "Blog Post {$blogpost->id} successfully deleted."],200);
 
     }
 }
