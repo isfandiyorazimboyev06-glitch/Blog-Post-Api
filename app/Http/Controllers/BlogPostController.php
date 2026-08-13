@@ -18,6 +18,8 @@ use App\Services\BlogPostService;
 
 use Illuminate\Http\JsonResponse;
 
+use Illuminate\Support\Facades\Gate;
+
 class BlogPostController extends Controller implements HasMiddleware
 {
     // Inject the BlogPostService through the constructor
@@ -72,7 +74,9 @@ class BlogPostController extends Controller implements HasMiddleware
      */
     public function update(UpdateBlogPostRequest $request, BlogPost $blogpost) : BlogPostResource
     {
-        //
+        // Laravel looks at the $blogPost object, finds BlogPostPolicy and calls 'update'
+        Gate::authorize('update',$blogpost);
+
         $updatedpost= $this->blogPostService->updatePost($blogpost,$request->validated());
 
         return new BlogPostResource($updatedpost);
@@ -84,6 +88,7 @@ class BlogPostController extends Controller implements HasMiddleware
     public function destroy(BlogPost $blogpost) : JsonResponse
     {
         //
+        Gate::authorize('delete',$blogpost);
         $this->blogPostService->deletePost($blogpost);
 
         return response()->json(["message" => "Blog Post {$blogpost->id} successfully deleted."],200);
