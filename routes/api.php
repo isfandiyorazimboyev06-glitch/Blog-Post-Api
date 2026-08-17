@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\BlogPostController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\PostExportController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -36,6 +37,8 @@ Route::apiresource('/blogpost',BlogPostController::class)
                 'message' => 'The requested blog was not found in our db.'
             ],404);
 });
+
+Route::post('/export',[PostExportController::class, 'export']);
 
 
 

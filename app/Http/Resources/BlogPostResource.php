@@ -18,6 +18,7 @@ class BlogPostResource extends JsonResource
             'id' => $this->id,
             'author' => $this->author,
             'post' => $this->post,
+            'user_id' => $this->user_id,
             'category_blog_post' => new CategoryBlogPostResource($this->whenloaded('category'))
         ];
     }

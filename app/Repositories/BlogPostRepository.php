@@ -5,12 +5,14 @@ namespace App\Repositories;
 use App\Models\BlogPost;
 use Illuminate\Database\Eloquent\Collection;
 
-class BlogPostRepository
+use App\Interfaces\BlogPostRepositoryInterface;
+
+class BlogPostRepository implements BlogPostRepositoryInterface
 {
     /**
      * Fetch all blog posts eager loading the category.
      */
-    public function all(): Collection
+    public function getAll(): Collection
     {
         return BlogPost::with('category')->get();
     }

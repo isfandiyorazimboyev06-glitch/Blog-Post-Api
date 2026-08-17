@@ -28,4 +28,23 @@ class RegisterRequest extends FormRequest
             'password' => 'required|string|min:6|confirmed'
         ];
     }
+
+    public function messages() : array
+    {
+        return [
+            'name.required' => 'The name field cannot be empty.',
+            'name.string' => 'The name should be string only.',
+            'name.max' => 'The name must be not longer than 255.',
+
+            'email.required'=>'The email field cannot be empty.',
+            'email.string' => 'The email should be string only.',
+            'email.email' =>  'Please provide a valid email format.',
+            'email.unique' => 'This email address is already registered in our system.',
+
+            'password.required' => 'The password is required.',
+            'password.string' => 'The password should be string only.',
+            'password.min' => 'The password should have minimum 6 letters',
+            'password.confirmed' => 'The password confirmation does not match.'
+        ];
+    }
 }

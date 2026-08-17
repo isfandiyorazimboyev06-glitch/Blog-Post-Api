@@ -18,12 +18,14 @@ use App\Services\BlogPostService;
 
 use Illuminate\Http\JsonResponse;
 
+use App\Events\BlogPostCreated;
+
 
 class BlogPostController extends Controller implements HasMiddleware
 {
     // Inject the BlogPostService through the constructor
     public function __construct(
-        protected BlogPostService $blogPostService
+        private BlogPostService $blogPostService
     ){}
 
     /**
@@ -55,6 +57,9 @@ class BlogPostController extends Controller implements HasMiddleware
         //
         $blogpost = $this->blogPostService->createPost($request->validated());
 
+        // calling event
+        BlogPostCreated::dispatch($blogpost);
+
         return new BlogPostResource($blogpost);
 
     }
@@ -82,11 +87,8 @@ class BlogPostController extends Controller implements HasMiddleware
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(DeleteBlogPostRequest $request) : JsonResponse
+    public function destroy(DeleteBlogPostRequest $request, BlogPost $blogpost) : JsonResponse
     {
-        // Fetch the pre-authorized model directly from the route
-        $blogpost = $request->route('blogpost');
-
         // Execute the service layer operation
         $this->blogPostService->deletePost($blogpost);
 
