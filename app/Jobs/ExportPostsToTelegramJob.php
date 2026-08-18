@@ -3,12 +3,18 @@
 namespace App\Jobs;
 
 use App\Models\BlogPost;
+use Illuminate\Support\Facades\Http;
+
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
+
+
+
+
+
 
 class ExportPostsToTelegramJob implements ShouldQueue
 {
@@ -30,7 +36,7 @@ class ExportPostsToTelegramJob implements ShouldQueue
     public function handle(): void
     {
         // 1. Fetch Blog posts data
-        $blogposts = BlogPost::with('category')
+        $blogposts = BlogPost::with(['category','user'])
             ->select('id', 'author', 'post', 'category_blog_post_id', 'user_id', 'created_at', 'updated_at')
             ->get();
 
@@ -46,7 +52,7 @@ class ExportPostsToTelegramJob implements ShouldQueue
         // 3. Write CSV content
         $file = fopen($filePath, 'w');
 
-        fputcsv($file, ['ID', 'Author', 'Post', 'Category Blog Posts ID', 'User ID', 'Created at', 'Updated at']);
+        fputcsv($file, ['ID', 'Author', 'Post', 'Category Blog Posts ID','Category Name', 'User ID','User Name', 'Created at', 'Updated at']);
 
         foreach ($blogposts as $blogpost) {
             fputcsv($file, [
@@ -54,7 +60,9 @@ class ExportPostsToTelegramJob implements ShouldQueue
                 $blogpost->author,
                 $blogpost->post,
                 $blogpost->category_blog_post_id,
+                $blogpost->category?->category_name ?? 'N/A',
                 $blogpost->user_id,
+                $blogpost->user?->name ?? 'N/A',
                 $blogpost->created_at?->toDateTimeString(),
                 $blogpost->updated_at?->toDateTimeString(),
             ]);
